@@ -209,14 +209,25 @@ class Example(Frame):
             dict["IsShortTextQuestion"] = self.form_json[questionID]["IsShortTextQuestion"]
             dict["KeyPhrases"] = list(self.keyPhraseDict[questionID])
             exportObj.append(dict)
-
         newContent = json.dumps(exportObj)
-
         firstName = self.fileName.split('.')[0]
         new_name = firstName + '_labeling.json'
         label_file = open(new_name, 'w')
         label_file.write(newContent)
         label_file.close()
+
+
+
+
+
+
+
+
+
+
+
+
+
 
     def prevPage(self):
         responseList = self.currentTextQuestionBrief["Responses"]
@@ -552,37 +563,73 @@ class Example(Frame):
         #content = self.getText()
         print("Command:"+command)
         firstSelection_index = textWidget.index(SEL_FIRST)
-        cursor_index = textWidget.index(SEL_LAST)
 
         aboveHalf_content = textWidget.get('1.0', firstSelection_index)   #text before selected text
         followHalf_content = textWidget.get(firstSelection_index, "end-1c")   #text begin at selected text
-        selected_string = textWidget.selection_get()
+        selected_string = textWidget.selection_get().strip()
         #if the selcted string has not been labeled
         if re.match(self.entityRe, selected_string) != None :
             ## if have selected entity
             new_string = selected_string.strip('[@@]')
-            followHalf_content = followHalf_content.replace(selected_string, new_string, 1)
+            answerLength = len(self.form_json[self.currentQuestionID]["Responses"])
+            for i in range(0, answerLength):
+                originalContent = self.form_json[self.currentQuestionID]["Responses"][i]
+                newContent = originalContent.replace(selected_string, new_string)
+                self.form_json[self.currentQuestionID]["Responses"][i] = newContent
+            newJsonContent=json.dumps(self.form_json)
+            if ".ann" in self.fileName:
+                new_name = self.fileName
+                ann_file = open(new_name, 'w')
+                ann_file.write(newJsonContent)
+                ann_file.close()
+            else:
+                firstName = self.fileName.split('.')[0]
+                new_name = firstName+'.ann'
+                ann_file = open(new_name, 'w')
+                ann_file.write(newJsonContent)
+                ann_file.close()
+            self.autoLoadNewFile(new_name)
             selected_string = new_string
-            cursor_index = cursor_index.split('.')[0]+"."+str(int(cursor_index.split('.')[1])-4)
-        afterEntity_content = followHalf_content[len(selected_string):]
-
-        if self.currentQuestionID not in self.keyPhraseDict:
-            self.keyPhraseDict[self.currentQuestionID] = set()
-
-        self.keyPhraseDict[self.currentQuestionID].add(selected_string.strip())
-        self.showLabeledKeyPhrase()
-        if command == "q":
-            print 'q: remove entity label'
+            self.keyPhraseDict[self.currentQuestionID].remove(selected_string)
+            self.showLabeledKeyPhrase()
         else:
-            if len(selected_string) > 0:
-                entity_content, cursor_index = self.replaceString(selected_string, selected_string, cursor_index)
-        aboveHalf_content += entity_content #first half content plus selected text with framework
-        #content = self.addRecommendContent(aboveHalf_content, afterEntity_content, self.recommendFlag)
-        ##  TODO
-        content = aboveHalf_content + afterEntity_content
-        content = content.encode('utf-8')
-        self.writeFile(self.fileName, content, index)
+            new_string = self.replaceString(selected_string, selected_string)  ## [@string@]
+            answerLength = len(self.form_json[self.currentQuestionID]["Responses"])
 
+            for i in range(0, answerLength):
+                originalContent = self.form_json[self.currentQuestionID]["Responses"][i]
+                newContent = originalContent.replace(selected_string, new_string)
+                self.form_json[self.currentQuestionID]["Responses"][i] = newContent
+
+            newJsonContent=json.dumps(self.form_json)
+            if ".ann" in self.fileName:
+                new_name = self.fileName
+                ann_file = open(new_name, 'w')
+                ann_file.write(newJsonContent)
+                ann_file.close()
+            else:
+                firstName = self.fileName.split('.')[0]
+                new_name = firstName+'.ann'
+                ann_file = open(new_name, 'w')
+                ann_file.write(newJsonContent)
+                ann_file.close()
+            self.autoLoadNewFile(new_name)
+            self.keyPhraseDict[self.currentQuestionID].add(selected_string)
+            self.showLabeledKeyPhrase()
+            '''
+            afterEntity_content = followHalf_content[len(selected_string):]
+
+            self.keyPhraseDict[self.currentQuestionID].add(selected_string)
+            self.showLabeledKeyPhrase()
+
+            if len(selected_string) > 0:
+                entity_content = self.replaceString(selected_string, selected_string)
+            aboveHalf_content += entity_content #first half content plus selected text with framework
+            
+            content = aboveHalf_content + afterEntity_content
+            content = content.encode('utf-8')
+            self.writeFile(self.fileName, content, index)
+            '''
     def deleteText1Input(self,event):
         if self.debug:
             print "Action Track: deleteTextInput"
@@ -663,12 +710,10 @@ class Example(Frame):
         content = aboveHalf_content + followHalf_content
         self.writeFile(self.fileName, content, 4)
 
-    def replaceString(self, content, string, cursor_index):
+    def replaceString(self, content, string):
         new_string = "[@" + string + "@]"
-        newcursor_index = cursor_index.split('.')[0]+"."+str(int(cursor_index.split('.')[1])+4)
-
         content = content.replace(string, new_string, 1)
-        return content, newcursor_index
+        return content
 
     def writeFile(self, fileName, content, index):
         if len(fileName) > 0:
