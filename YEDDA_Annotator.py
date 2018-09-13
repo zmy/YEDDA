@@ -212,7 +212,8 @@ class Example(Frame):
 
         newContent = json.dumps(exportObj)
 
-        new_name = self.fileName + '_labeling.json'
+        firstName = self.fileName.split('.')[0]
+        new_name = firstName + '_labeling.json'
         label_file = open(new_name, 'w')
         label_file.write(newContent)
         label_file.close()
@@ -680,7 +681,8 @@ class Example(Frame):
                 ann_file.write(newContent)
                 ann_file.close()
             else:
-                new_name = fileName+'.ann'
+                firstName = fileName.split('.')[0]
+                new_name = firstName+'.ann'
                 ann_file = open(new_name, 'w')
                 ann_file.write(newContent)
                 ann_file.close()
