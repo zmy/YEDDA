@@ -17,4 +17,4 @@ Important features:
 1. Key phrases for a text question will be shown in the Label Result: window.
 2. Annotated phrase is presented as "[@phrase@]"
 3. When a phrase is annotated as key phrase, all the same phrases in the answers will be annotated automatically.
-
+4. An intermediate file "****.ann" will be generated to record the text with annotation.
